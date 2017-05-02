@@ -1,0 +1,163 @@
+﻿<package>
+
+<job>
+<script language="JavaScript">
+
+  if (!String.prototype.format) {
+    String.prototype.format = function() {
+      var args = arguments;
+      return this.replace(/{(\d+)}/g, function(match, number) { 
+        return typeof args[number] != 'undefined'
+          ? args[number]
+          : match
+        ;
+      });
+    };
+  }
+
+  var isCscript = /\\cscript\.exe$/i.exec(WScript.FullName);
+  if(!isCscript) {
+    var shell = new ActiveXObject("WScript.Shell");
+    var cmd = "cmd /c cscript.exe \"{0}\"".format(WScript.ScriptFullName);
+    shell.Run(cmd, 1, true);
+    WScript.Quit();
+  }
+
+  var json_html = WScript.CreateObject('htmlfile'), JSON;
+  json_html.write('<meta http-equiv="x-ua-compatible" content="IE=9" />');
+  json_html.close(JSON = json_html.parentWindow.JSON);
+
+  var fso = new ActiveXObject("Scripting.FileSystemObject");
+  var SCRIPT_CURRENT_DIR = fso.getParentFolderName(WScript.ScriptFullName);
+  var url = "https://raw.githubusercontent.com/qiitadrive/qiita-likes/master/JavaScript.json";
+  var fileName = SCRIPT_CURRENT_DIR + "\\JavaScript.json";
+  if (!fso.FileExists(fileName)) downloadFile(url, fileName);
+
+  var total = readVectorFromFile_Utf8(fileName);
+  echo("トータル件数は{0}件です".format(total.length));
+
+  total.sort(function compareFunc(a, b) { return b.likes - a.likes; });
+  echo("ソートが完了しました");
+
+  generateHTML("sorted.html", total, 1000);
+  //generateHTML("sorted.html", total, 10000000);
+
+  var msg = "終了します。sorted.htmlをブラウザで開いてください";
+  echo(msg);
+  msgbox(msg);
+  WScript.Quit();
+
+  function htmlEncode(s) {
+    s = s.replace("<", "&lt;");
+    s = s.replace(">", "&gt;");
+    s = s.replace("&", "&amp;");
+    s = s.replace("&amp;lt;", "&lt;");
+    s = s.replace("&amp;gt;", "&gt;");
+    return s;
+  }
+
+  function separate(num){
+    return String(num).replace( /(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
+  }
+
+  function generateHTML(path, total, size) {
+    text = "<body>" + "\n";
+    text = "対象期間: 2011/09～2017/04 ({0}件の投稿)\n\n".format(separate(total.length));
+    for (var i=0; (i<total.length && i<size); i++) {
+      var rec = total[i];
+      text += "<div align=left>" + "\n";
+      text += "" + (i + 1) + "位. ";
+      text += "<a target='_blank' href='http://qiita.com/{0}/items/{1}'>{2}</a>".format(rec.user, rec.uuid, htmlEncode(rec.title));
+      text += " いいね={0}件<br />\n".format(rec.likes);
+      var tags =  rec.tags.split(",");
+      for (var j=0; j<tags.length; j++) tags[j] = "<b>[{0}]</b>".format(tags[j]);
+      text += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(投稿日: {0}&nbsp;&nbsp;&nbsp;&nbsp;投稿者: @<a target='_blank' href='http://qiita.com/{1}'>{1}</a>&nbsp;&nbsp;タグ: {2})".format(rec.post, rec.user, tags.join(" "));
+      text += "</div>" + "\n";
+    }
+
+    writeTextToFile_Utf8_NoBOM(path, text);
+  }
+
+
+  function downloadFile(url, fileName) {
+    var StreamTypeEnum  = { adTypeBinary: 1, adTypeText: 2 };
+    var SaveOptionsEnum = { adSaveCreateNotExist: 1, adSaveCreateOverWrite: 2 };
+    var http = WScript.CreateObject("MSXML2.XMLHTTP");
+    var strm = WScript.CreateObject("ADODB.Stream");
+    http.Open("GET", url, false);
+    http.Send();
+    strm.Type = StreamTypeEnum.adTypeBinary;
+    strm.Open();
+    strm.Write(http.responseBody);
+    strm.SaveToFile(fileName, SaveOptionsEnum.adSaveCreateOverWrite);
+  }
+
+  function echo(msg) {
+    WScript.Echo(msg);
+  }
+
+  function msgbox(msg) {
+    var shell = new ActiveXObject("WScript.Shell");
+    shell.Popup(msg, 0, "Windows Script Host", 0);
+  }
+
+  function readLinesFromFile_Utf8(path) {
+    var StreamTypeEnum    = { adTypeBinary: 1, adTypeText: 2 };
+    var SaveOptionsEnum   = { adSaveCreateNotExist: 1, adSaveCreateOverWrite: 2 };
+    var LineSeparatorEnum = { adLF: 10, adCR: 13, adCRLF: -1 };
+    var StreamReadEnum    = { adReadAll: -1, adReadLine: -2 };
+    var stream = new ActiveXObject("ADODB.Stream");
+    stream.Type = StreamTypeEnum.adTypeText;
+    stream.Charset = "utf-8";
+    stream.LineSeparator = LineSeparatorEnum.adLF;
+    var result = "";
+    stream.Open();
+    stream.LoadFromFile(path);
+    var count = 0;
+    while (!stream.EOS) {
+      result += stream.ReadText(StreamReadEnum.adReadLine) + "\n";
+      count++;
+      if (count > 0 && (count % 100000) == 0) {
+        WScript.Echo("readLinesFromFile_Utf8({0}): {1}".format(path, count));
+      }
+    }
+    if (count >= 100000) WScript.Echo("readLinesFromFile_Utf8({0}): {1}...Done!".format(path, count));
+
+    stream.Close();
+    return result;
+  }
+
+  function readVectorFromFile_Utf8(path) {
+    var json = readLinesFromFile_Utf8(path);
+    var vec = JSON.parse(json);
+    var result = [];
+    for (var i=0; i<vec.length; i++) {
+      result.push(vec[i]);
+    }
+    return result;
+  }
+
+  function writeTextToFile_Utf8_NoBOM(path, text) {
+    var StreamTypeEnum  = { adTypeBinary: 1, adTypeText: 2 };
+    var SaveOptionsEnum = { adSaveCreateNotExist: 1, adSaveCreateOverWrite: 2 };
+    var stream = new ActiveXObject("ADODB.Stream");
+    stream.Type = StreamTypeEnum.adTypeText;
+    stream.Charset = "utf-8";
+    stream.Open();
+    stream.WriteText(text);
+    stream.Position = 0
+    stream.Type = StreamTypeEnum.adTypeBinary;
+    stream.Position = 3
+    var buf = stream.Read();
+    stream.Position = 0
+    stream.Write(buf);
+    stream.SetEOS();
+    stream.SaveToFile(path, SaveOptionsEnum.adSaveCreateOverWrite);
+    stream.Close();
+  }
+
+</script>
+</job>
+
+</package>
+
