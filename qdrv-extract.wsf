@@ -1,0 +1,54 @@
+﻿<package>
+
+<job>
+<script language="JavaScript" src="qdrv-common.js" />
+<script language="JavaScript">
+
+  var isCscript = /\\cscript\.exe$/i.exec(WScript.FullName);
+  if(!isCscript) {
+    var shell = new ActiveXObject("WScript.Shell");
+    var cmd = "cmd /c cscript.exe \"{0}\"".format(WScript.ScriptFullName);
+    msgbox("cmdは"+cmd);
+    shell.Run(cmd, 1, true);
+    WScript.Quit();
+  }
+
+  var json_html = WScript.CreateObject('htmlfile'), JSON;
+  json_html.write('<meta http-equiv="x-ua-compatible" content="IE=9" />');
+  json_html.close(JSON = json_html.parentWindow.JSON);
+
+  var total = readVectorFromFile_Utf8("total.json");
+  echo(total.length);
+
+  saveForTag("JavaScript.json", total, "JavaScript");
+
+  echo("終了します");
+  msgbox("終了します");
+  WScript.Quit();
+
+  function extractForTag(total, tag) {
+    var result = [];
+    for (var i=0; i<total.length; i++) {
+      var rec = total[i];
+      if (rec.tags.split(",").contains(tag)) result.push(rec);
+    }
+    return result;
+  }
+
+  function saveForTag(path, total, tag) {
+    var recs = extractForTag(total, tag);
+    var text = "[" + "\n";
+    for (var i=0; i<recs.length; i++) {
+      text += JSON.stringify(recs[i]);
+      if (i<(recs.length-1)) text += ",";
+      text += "\n";
+    }
+    text += "]" + "\n";
+    writeTextToFile_Utf8_NoBOM(path, text);
+  }
+
+</script>
+</job>
+
+</package>
+
