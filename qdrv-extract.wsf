@@ -37,14 +37,7 @@
 
   function saveForTag(path, total, tag) {
     var recs = extractForTag(total, tag);
-    var text = "[" + "\n";
-    for (var i=0; i<recs.length; i++) {
-      text += JSON.stringify(recs[i]);
-      if (i<(recs.length-1)) text += ",";
-      text += "\n";
-    }
-    text += "]" + "\n";
-    writeTextToFile_Utf8_NoBOM(path, text);
+    writeVectorToFile_Utf8(path, recs);
   }
 
 </script>

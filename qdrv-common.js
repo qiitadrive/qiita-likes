@@ -42,11 +42,6 @@
     };
   }
 
-  function getScriptCurrentDirPath() {
-    var fso = new ActiveXObject("Scripting.FileSystemObject");
-    return fso.getParentFolderName(WScript.ScriptFullName);
-  }
-
   function echo(msg) {
     WScript.Echo(msg);
   }
@@ -127,6 +122,17 @@
     stream.Close();
   }
 
+  function writeVectorToFile_Utf8(path, vec) {
+    var text = "[" + "\n";
+    for (var i=0; i<vec.length; i++) {
+      text += JSON.stringify(vec[i]);
+      if (i<(vec.length-1)) text += ",";
+      text += "\n";
+    }
+    text += "]" + "\n";
+    writeTextToFile_Utf8_NoBOM(path, text);
+  }
+
   function readVectorFromFile_Utf8(path) {
     var json = readLinesFromFile_Utf8(path);
     var vec = JSON.parse(json);
@@ -137,14 +143,8 @@
     return result;
   }
 
-  function writeVectorToFile_Utf8(path, vec) {
-    var dcopy = JSON.parse(JSON.stringify(vec));
-    for (var propName in dcopy) {
-      if (propName != "length" && !/^\d+$/.exec(propName)) {
-        delete dcopy[propName];
-      }
-    }
-    var json = JSON.stringify(dcopy, null, 2);
-    writeTextToFile_Utf8_NoBOM(path, json);
+  function getScriptCurrentDirPath() {
+    var fso = new ActiveXObject("Scripting.FileSystemObject");
+    return fso.getParentFolderName(WScript.ScriptFullName);
   }
 
