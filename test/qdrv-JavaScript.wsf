@@ -29,11 +29,10 @@
 
   var fso = new ActiveXObject("Scripting.FileSystemObject");
   var SCRIPT_CURRENT_DIR = fso.getParentFolderName(WScript.ScriptFullName);
-  var url = "https://raw.githubusercontent.com/qiitadrive/qiita-likes/master/JavaScript.json";
-  var fileName = SCRIPT_CURRENT_DIR + "\\JavaScript.json";
-  if (!fso.FileExists(fileName)) downloadFile(url, fileName);
 
-  var total = readVectorFromFile_Utf8(fileName);
+  var total = loadJsonObjectFromURL("https://raw.githubusercontent.com/qiitadrive/qiita-likes/master/JavaScript.json");
+
+
   echo("トータル件数は{0}件です".format(total.length));
 
   total.sort(function compareFunc(a, b) { return b.likes - a.likes; });
@@ -78,20 +77,6 @@
     writeTextToFile_Utf8_NoBOM(path, text);
   }
 
-
-  function downloadFile(url, fileName) {
-    var StreamTypeEnum  = { adTypeBinary: 1, adTypeText: 2 };
-    var SaveOptionsEnum = { adSaveCreateNotExist: 1, adSaveCreateOverWrite: 2 };
-    var http = WScript.CreateObject("MSXML2.XMLHTTP");
-    var strm = WScript.CreateObject("ADODB.Stream");
-    http.Open("GET", url, false);
-    http.Send();
-    strm.Type = StreamTypeEnum.adTypeBinary;
-    strm.Open();
-    strm.Write(http.responseBody);
-    strm.SaveToFile(fileName, SaveOptionsEnum.adSaveCreateOverWrite);
-  }
-
   function echo(msg) {
     WScript.Echo(msg);
   }
@@ -99,42 +84,6 @@
   function msgbox(msg) {
     var shell = new ActiveXObject("WScript.Shell");
     shell.Popup(msg, 0, "Windows Script Host", 0);
-  }
-
-  function readLinesFromFile_Utf8(path) {
-    var StreamTypeEnum    = { adTypeBinary: 1, adTypeText: 2 };
-    var SaveOptionsEnum   = { adSaveCreateNotExist: 1, adSaveCreateOverWrite: 2 };
-    var LineSeparatorEnum = { adLF: 10, adCR: 13, adCRLF: -1 };
-    var StreamReadEnum    = { adReadAll: -1, adReadLine: -2 };
-    var stream = new ActiveXObject("ADODB.Stream");
-    stream.Type = StreamTypeEnum.adTypeText;
-    stream.Charset = "utf-8";
-    stream.LineSeparator = LineSeparatorEnum.adLF;
-    var result = "";
-    stream.Open();
-    stream.LoadFromFile(path);
-    var count = 0;
-    while (!stream.EOS) {
-      result += stream.ReadText(StreamReadEnum.adReadLine) + "\n";
-      count++;
-      if (count > 0 && (count % 100000) == 0) {
-        WScript.Echo("readLinesFromFile_Utf8({0}): {1}".format(path, count));
-      }
-    }
-    if (count >= 100000) WScript.Echo("readLinesFromFile_Utf8({0}): {1}...Done!".format(path, count));
-
-    stream.Close();
-    return result;
-  }
-
-  function readVectorFromFile_Utf8(path) {
-    var json = readLinesFromFile_Utf8(path);
-    var vec = JSON.parse(json);
-    var result = [];
-    for (var i=0; i<vec.length; i++) {
-      result.push(vec[i]);
-    }
-    return result;
   }
 
   function writeTextToFile_Utf8_NoBOM(path, text) {
@@ -154,6 +103,29 @@
     stream.SetEOS();
     stream.SaveToFile(path, SaveOptionsEnum.adSaveCreateOverWrite);
     stream.Close();
+  }
+
+  function getURLContent(url) {
+    var StreamTypeEnum  = { adTypeBinary: 1, adTypeText: 2 };
+    var SaveOptionsEnum = { adSaveCreateNotExist: 1, adSaveCreateOverWrite: 2 };
+    var http = WScript.CreateObject("MSXML2.XMLHTTP");
+    var strm = WScript.CreateObject("ADODB.Stream");
+    http.Open("GET", url, false);
+    http.Send();
+    strm.Type = StreamTypeEnum.adTypeBinary;
+    strm.Open();
+    strm.Write(http.responseBody);
+    strm.Position = 0
+    strm.Type = StreamTypeEnum.adTypeText;
+    strm.Charset = "utf-8";
+    var result = strm.ReadText();
+    strm.Close();
+    return result;
+  }
+
+  function loadJsonObjectFromURL(url) {
+    var json = getURLContent(url);
+    return JSON.parse(json);
   }
 
 </script>
