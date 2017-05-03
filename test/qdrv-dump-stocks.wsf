@@ -1,0 +1,79 @@
+﻿<package>
+
+<job>
+<script language="JavaScript">
+
+  if (!String.prototype.format) {
+    String.prototype.format = function() {
+      var args = arguments;
+      return this.replace(/{(\d+)}/g, function(match, number) { 
+        return typeof args[number] != 'undefined'
+          ? args[number]
+          : match
+        ;
+      });
+    };
+  }
+
+  var isCscript = /\\cscript\.exe$/i.exec(WScript.FullName);
+  if(!isCscript) {
+    var shell = new ActiveXObject("WScript.Shell");
+    var cmd = "cmd /c cscript.exe \"{0}\"".format(WScript.ScriptFullName);
+    shell.Run(cmd, 1, true);
+    WScript.Quit();
+  }
+
+  var json_html = WScript.CreateObject('htmlfile'), JSON;
+  json_html.write('<meta http-equiv="x-ua-compatible" content="IE=9" />');
+  json_html.close(JSON = json_html.parentWindow.JSON);
+
+  var vec = loadJsonObjectFromURL("https://qiita.com/api/v2/items/1a182f187fd2a8df29c2/stockers?per_page=100&page=1");
+
+  echo("{0}人がストックしています。".format(vec.length));
+
+  for (var i=0; i<vec.length; i++) {
+    echo("{0}人目: @{1}={2}".format(i + 1, vec[i].id, vec[i].name));
+  }
+
+  var msg = "終了します。";
+  echo(msg);
+  msgbox(msg);
+  WScript.Quit();
+
+  function echo(msg) {
+    WScript.Echo(msg);
+  }
+
+  function msgbox(msg) {
+    var shell = new ActiveXObject("WScript.Shell");
+    shell.Popup(msg, 0, "Windows Script Host", 0);
+  }
+
+  function getURLContent(url) {
+    var StreamTypeEnum  = { adTypeBinary: 1, adTypeText: 2 };
+    var SaveOptionsEnum = { adSaveCreateNotExist: 1, adSaveCreateOverWrite: 2 };
+    var http = WScript.CreateObject("MSXML2.XMLHTTP");
+    var strm = WScript.CreateObject("ADODB.Stream");
+    http.Open("GET", url, false);
+    http.Send();
+    strm.Type = StreamTypeEnum.adTypeBinary;
+    strm.Open();
+    strm.Write(http.responseBody);
+    strm.Position = 0
+    strm.Type = StreamTypeEnum.adTypeText;
+    strm.Charset = "utf-8";
+    var result = strm.ReadText();
+    strm.Close();
+    return result;
+  }
+
+  function loadJsonObjectFromURL(url) {
+    var json = getURLContent(url);
+    return JSON.parse(json);
+  }
+
+</script>
+</job>
+
+</package>
+
