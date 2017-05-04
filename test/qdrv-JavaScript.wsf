@@ -57,7 +57,7 @@
 
   function generateHTML(path, total, size) {
     text = "<body>" + "\n";
-    text += "対象期間: 2011/09～2017/04 ({0}件の投稿)\n\n".format(separate(total.length));
+    text += "<h1>対象投稿件数: {0}件</h1>\n\n".format(separate(total.length));
     for (var i=0; (i<total.length && i<size); i++) {
       var rec = total[i];
       text += "<div align=left>" + "\n";
