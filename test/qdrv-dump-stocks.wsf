@@ -27,7 +27,7 @@
   json_html.write('<meta http-equiv="x-ua-compatible" content="IE=9" />');
   json_html.close(JSON = json_html.parentWindow.JSON);
 
-  var vec = loadJsonObjectFromURL("https://qiita.com/api/v2/items/1a182f187fd2a8df29c2/stockers?per_page=100&page=1");
+  var vec = loadVectorFromURL("https://qiita.com/api/v2/items/1a182f187fd2a8df29c2/stockers?per_page=100&page=1");
 
   echo("{0}人がストックしています。".format(vec.length));
 
@@ -70,6 +70,15 @@
   function loadJsonObjectFromURL(url) {
     var json = getURLContent(url);
     return JSON.parse(json);
+  }
+
+  function loadVectorFromURL(url) {
+    var vec =loadJsonObjectFromURL(url);
+    var result = [];
+    for (var i=0; i<vec.length; i++) {
+      result.push(vec[i]);
+    }
+    return result;
   }
 
 </script>
