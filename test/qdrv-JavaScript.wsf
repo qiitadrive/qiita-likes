@@ -27,7 +27,7 @@
   json_html.write('<meta http-equiv="x-ua-compatible" content="IE=9" />');
   json_html.close(JSON = json_html.parentWindow.JSON);
 
-  var total = loadJsonObjectFromURL("https://raw.githubusercontent.com/qiitadrive/qiita-likes/master/JavaScript.json");
+  var total = loadVectorFromURL("https://raw.githubusercontent.com/qiitadrive/qiita-likes/master/JavaScript.json");
 
   echo("トータル件数は{0}件です".format(total.length));
 
@@ -122,6 +122,15 @@
   function loadJsonObjectFromURL(url) {
     var json = getURLContent(url);
     return JSON.parse(json);
+  }
+
+  function loadVectorFromURL(url) {
+    var vec =loadJsonObjectFromURL(url);
+    var result = [];
+    for (var i=0; i<vec.length; i++) {
+      result.push(vec[i]);
+    }
+    return result;
   }
 
 </script>
