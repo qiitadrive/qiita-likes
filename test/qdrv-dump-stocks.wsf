@@ -58,7 +58,7 @@
     http.Send();
     strm.Type = StreamTypeEnum.adTypeBinary;
     strm.Open();
-    strm.Write(http.responseBody);
+    strm.Write(http.ResponseBody);
     strm.Position = 0
     strm.Type = StreamTypeEnum.adTypeText;
     strm.Charset = "utf-8";
